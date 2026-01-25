@@ -1,0 +1,51 @@
+# DonutSpawn Configuration
+# Creates donut-shaped random spawn areas with GriefPrevention awareness
+
+# Maximum attempts to find a valid spawn location before falling back to world spawn
+max-attempts: 50
+
+# Safety checks for spawn locations
+safety:
+  # Check for solid ground (not air, water, lava)
+  require-solid-ground: true
+  # Minimum Y level for spawns
+  min-y: 63
+  # Maximum Y level for spawns (255 = no limit, uses world surface)
+  max-y: 255
+  # Avoid spawning in these biomes (empty = allow all)
+  blocked-biomes: []
+  # Example: blocked-biomes: [OCEAN, DEEP_OCEAN, FROZEN_OCEAN]
+
+# Spawn zones - players will randomly spawn in one of these areas
+# Each zone is a "donut" shape: spawns between inner-radius and outer-radius
+zones:
+  # Example zone - modify or add your own
+  main:
+    # World this zone is in
+    world: world
+    # Center coordinates
+    center-x: 0
+    center-z: 0
+    # Inner radius (exclusion zone) - no spawns within this distance of center
+    inner-radius: 100
+    # Outer radius - no spawns beyond this distance from center
+    outer-radius: 500
+    # Weight for random selection (higher = more likely to be chosen)
+    # Useful if you want some zones to be more common than others
+    weight: 1.0
+
+  # You can add multiple zones like this:
+  # secondary:
+  #   world: world
+  #   center-x: 5000
+  #   center-z: 5000
+  #   inner-radius: 50
+  #   outer-radius: 300
+  #   weight: 0.5
+
+# Messages (supports color codes with &)
+messages:
+  spawned: "&aWelcome! You've spawned in a random location."
+  fallback: "&eNo valid spawn found, using world spawn."
+  # Set to empty string to disable the message
+  # spawned: ""

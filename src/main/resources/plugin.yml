@@ -1,0 +1,24 @@
+name: DonutSpawn
+version: '1.0.0'
+main: com.haksndot.donutspawn.DonutSpawn
+api-version: '1.21'
+authors: [Haksndot]
+description: Random spawn in donut-shaped zones with GriefPrevention awareness
+
+softdepend:
+  - GriefPrevention
+
+commands:
+  donutspawn:
+    description: Manage DonutSpawn settings
+    usage: /<command> <reload|addzone|removezone|list|test>
+    permission: donutspawn.admin
+    aliases: [ds, dspawn]
+
+permissions:
+  donutspawn.admin:
+    description: Allows access to DonutSpawn admin commands
+    default: op
+  donutspawn.bypass:
+    description: Bypass random spawn (use normal respawn behavior)
+    default: false
