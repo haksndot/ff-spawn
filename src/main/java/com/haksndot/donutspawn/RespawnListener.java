@@ -6,6 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class RespawnListener implements Listener {
 
@@ -61,5 +62,55 @@ public class RespawnListener implements Listener {
                 }, 20L);
             }
         }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
+        // Only handle End portal exits
+        if (event.getCause() != PlayerTeleportEvent.TeleportCause.END_PORTAL) {
+            return;
+        }
+
+        // Only handle teleports FROM the End to overworld
+        if (event.getFrom().getWorld() == null ||
+                !event.getFrom().getWorld().getEnvironment().equals(org.bukkit.World.Environment.THE_END)) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+
+        // Check bypass permission
+        if (player.hasPermission("donutspawn.bypass")) {
+            return;
+        }
+
+        // Check if player has a bed spawn set
+        Location bedSpawn = player.getBedSpawnLocation();
+        if (bedSpawn != null) {
+            // Player has a bed - let them go there
+            event.setTo(bedSpawn);
+            return;
+        }
+
+        // Player is unbedded - find random spawn
+        Location spawnLoc = plugin.getSpawnManager().findSpawnLocation(player);
+
+        if (spawnLoc != null) {
+            event.setTo(spawnLoc);
+
+            // Send message if configured
+            String message = plugin.getConfigManager().getMessageSpawned();
+            if (!message.isEmpty()) {
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    if (player.isOnline()) {
+                        player.sendMessage(message);
+                    }
+                }, 20L);
+            }
+
+            plugin.getLogger().info("Random spawned " + player.getName() + " (End return) at " +
+                    String.format("%.0f, %.0f, %.0f", spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ()));
+        }
+        // If no valid spawn found, default behavior will send them to world spawn
     }
 }
