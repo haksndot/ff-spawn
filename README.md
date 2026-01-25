@@ -10,10 +10,16 @@ A Paper plugin for random spawn in donut-shaped zones with GriefPrevention aware
 - **Safety checks** - Finds solid ground, avoids hazards (lava, cacti, magma, etc.), respects Y limits
 - **Biome filtering** - Optionally block spawning in specific biomes (e.g., oceans)
 - **Uniform distribution** - Uses proper math to ensure even distribution across the donut area
+- **End portal support** - Unbedded players returning from the End also get a random spawn
 
 ## How It Works
 
-When a player dies without a bed or respawn anchor set, DonutSpawn selects a random spawn zone (weighted if multiple exist), then finds a random point within that zone's "donut" - the area between the inner and outer radius. It then verifies the location is:
+DonutSpawn triggers in two scenarios for unbedded players (no bed or respawn anchor):
+
+1. **Death respawn** - When a player dies and respawns
+2. **End portal return** - When a player exits the End via the end portal
+
+In either case, DonutSpawn selects a random spawn zone (weighted if multiple exist), then finds a random point within that zone's "donut" - the area between the inner and outer radius. It then verifies the location is:
 
 1. Not inside another player's GriefPrevention claim
 2. On solid ground (not water, lava, or air)
