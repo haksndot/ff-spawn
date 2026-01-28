@@ -21,7 +21,7 @@ dependencies {
 }
 
 tasks.jar {
-    archiveFileName.set("DonutSpawn-${version}.jar")
+    archiveFileName.set("ff-spawn-${version}.jar")
 }
 
 tasks.withType<JavaCompile> {

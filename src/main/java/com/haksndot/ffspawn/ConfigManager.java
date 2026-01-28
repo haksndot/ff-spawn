@@ -1,17 +1,15 @@
-package com.haksndot.donutspawn;
+package com.haksndot.ffspawn;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class ConfigManager {
 
-    private final DonutSpawn plugin;
+    private final FFSpawn plugin;
     private List<SpawnZone> zones;
     private int maxAttempts;
     private boolean requireSolidGround;
@@ -21,16 +19,27 @@ public class ConfigManager {
     private String messageSpawned;
     private String messageFallback;
 
-    public ConfigManager(DonutSpawn plugin) {
+    // Spawn blocks config
+    private boolean spawnBlocksEnabled;
+    private double spawnBlockWeight;
+    private boolean spawnBlockRecipeEnabled;
+    private List<String> spawnBlockRecipeShape;
+    private Map<Character, Material> spawnBlockRecipeIngredients;
+
+    public ConfigManager(FFSpawn plugin) {
         this.plugin = plugin;
         this.zones = new ArrayList<>();
         this.blockedBiomes = new HashSet<>();
+        this.spawnBlockRecipeShape = new ArrayList<>();
+        this.spawnBlockRecipeIngredients = new HashMap<>();
     }
 
     public void loadConfig() {
         FileConfiguration config = plugin.getConfig();
         zones.clear();
         blockedBiomes.clear();
+        spawnBlockRecipeShape.clear();
+        spawnBlockRecipeIngredients.clear();
 
         // Load general settings
         maxAttempts = config.getInt("max-attempts", 50);
@@ -74,6 +83,37 @@ public class ConfigManager {
             }
         }
 
+        // Load spawn blocks config
+        ConfigurationSection sbSection = config.getConfigurationSection("spawn-blocks");
+        if (sbSection != null) {
+            spawnBlocksEnabled = sbSection.getBoolean("enabled", true);
+            spawnBlockWeight = sbSection.getDouble("weight", 1.0);
+
+            ConfigurationSection recipe = sbSection.getConfigurationSection("recipe");
+            if (recipe != null) {
+                spawnBlockRecipeEnabled = recipe.getBoolean("enabled", true);
+                spawnBlockRecipeShape = recipe.getStringList("shape");
+
+                ConfigurationSection ingredients = recipe.getConfigurationSection("ingredients");
+                if (ingredients != null) {
+                    for (String key : ingredients.getKeys(false)) {
+                        if (key.length() == 1) {
+                            try {
+                                Material mat = Material.valueOf(ingredients.getString(key).toUpperCase());
+                                spawnBlockRecipeIngredients.put(key.charAt(0), mat);
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            } else {
+                spawnBlockRecipeEnabled = true;
+            }
+        } else {
+            spawnBlocksEnabled = true;
+            spawnBlockWeight = 1.0;
+            spawnBlockRecipeEnabled = true;
+        }
+
         // Load messages
         ConfigurationSection messages = config.getConfigurationSection("messages");
         if (messages != null) {
@@ -84,8 +124,8 @@ public class ConfigManager {
             messageFallback = "";
         }
 
-        if (zones.isEmpty()) {
-            plugin.getLogger().warning("No spawn zones configured! Players will use default world spawn.");
+        if (zones.isEmpty() && !spawnBlocksEnabled) {
+            plugin.getLogger().warning("No spawn zones configured and spawn blocks disabled!");
         }
     }
 
@@ -159,5 +199,25 @@ public class ConfigManager {
 
     public String getMessageFallback() {
         return messageFallback;
+    }
+
+    public boolean isSpawnBlocksEnabled() {
+        return spawnBlocksEnabled;
+    }
+
+    public double getSpawnBlockWeight() {
+        return spawnBlockWeight;
+    }
+
+    public boolean isSpawnBlockRecipeEnabled() {
+        return spawnBlockRecipeEnabled;
+    }
+
+    public List<String> getSpawnBlockRecipeShape() {
+        return spawnBlockRecipeShape;
+    }
+
+    public Map<Character, Material> getSpawnBlockRecipeIngredients() {
+        return spawnBlockRecipeIngredients;
     }
 }

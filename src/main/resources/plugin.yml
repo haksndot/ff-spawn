@@ -1,24 +1,27 @@
-name: DonutSpawn
+name: ff-spawn
 version: '1.0.0'
-main: com.haksndot.donutspawn.DonutSpawn
+main: com.haksndot.ffspawn.FFSpawn
 api-version: '1.21'
 authors: [Haksndot]
-description: Random spawn in donut-shaped zones with GriefPrevention awareness
+description: Flexible Foundation Spawn - random spawn zones with GriefPrevention awareness
 
 softdepend:
   - GriefPrevention
 
 commands:
-  donutspawn:
-    description: Manage DonutSpawn settings
+  ffspawn:
+    description: Manage FFSpawn settings
     usage: /<command> <reload|addzone|removezone|list|test>
-    permission: donutspawn.admin
-    aliases: [ds, dspawn]
+    permission: ffspawn.admin
+    aliases: [ffs, spawn]
 
 permissions:
-  donutspawn.admin:
-    description: Allows access to DonutSpawn admin commands
+  ffspawn.admin:
+    description: Allows access to FFSpawn admin commands
     default: op
-  donutspawn.bypass:
+  ffspawn.bypass:
     description: Bypass random spawn (use normal respawn behavior)
     default: false
+  ffspawn.place:
+    description: Allows placing spawn blocks
+    default: true

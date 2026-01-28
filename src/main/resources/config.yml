@@ -1,4 +1,4 @@
-# DonutSpawn Configuration
+# FFSpawn Configuration
 # Creates donut-shaped random spawn areas with GriefPrevention awareness
 
 # Maximum attempts to find a valid spawn location before falling back to world spawn
@@ -42,6 +42,23 @@ zones:
   #   inner-radius: 50
   #   outer-radius: 300
   #   weight: 0.5
+
+# Spawn Blocks - player-placed spawn points
+spawn-blocks:
+  enabled: true
+  weight: 1.0  # Weight per spawn block in random selection
+  recipe:
+    enabled: true
+    shape:
+      - "GIG"
+      - "ILI"
+      - "RNR"
+    ingredients:
+      G: GOLD_BLOCK
+      I: IRON_BLOCK
+      L: LODESTONE
+      N: NETHER_STAR
+      R: REDSTONE_BLOCK
 
 # Messages (supports color codes with &)
 messages:

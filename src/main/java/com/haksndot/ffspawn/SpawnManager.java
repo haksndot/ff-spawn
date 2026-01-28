@@ -1,4 +1,4 @@
-package com.haksndot.donutspawn;
+package com.haksndot.ffspawn;
 
 import org.bukkit.HeightMap;
 import org.bukkit.Location;
@@ -7,19 +7,26 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class SpawnManager {
 
-    private final DonutSpawn plugin;
+    private final FFSpawn plugin;
     private final ConfigManager config;
     private final GriefPreventionHook gpHook;
+    private SpawnBlockManager spawnBlockManager;
 
-    public SpawnManager(DonutSpawn plugin, ConfigManager config, GriefPreventionHook gpHook) {
+    public SpawnManager(FFSpawn plugin, ConfigManager config, GriefPreventionHook gpHook) {
         this.plugin = plugin;
         this.config = config;
         this.gpHook = gpHook;
+    }
+
+    public void setSpawnBlockManager(SpawnBlockManager manager) {
+        this.spawnBlockManager = manager;
     }
 
     /**
@@ -28,57 +35,119 @@ public class SpawnManager {
      */
     public Location findSpawnLocation(Player player) {
         List<SpawnZone> zones = config.getZones();
-        if (zones.isEmpty()) {
+        Collection<SpawnBlock> spawnBlocks = (config.isSpawnBlocksEnabled() && spawnBlockManager != null)
+                ? spawnBlockManager.getAllSpawnBlocks() : List.of();
+
+        if (zones.isEmpty() && spawnBlocks.isEmpty()) {
             return null;
         }
 
         int maxAttempts = config.getMaxAttempts();
 
         for (int attempt = 0; attempt < maxAttempts; attempt++) {
-            // Select a random zone (weighted)
-            SpawnZone zone = selectRandomZone(zones);
-            if (zone == null || zone.getWorld() == null) {
-                continue;
-            }
+            // Select either a zone or spawn block based on weights
+            Object selected = selectWeightedSpawnPoint(zones, spawnBlocks);
 
-            // Get random location in the donut
-            Location loc = zone.getRandomLocation();
-            if (loc == null) {
-                continue;
+            if (selected instanceof SpawnZone zone) {
+                Location loc = attemptZoneSpawn(zone, player);
+                if (loc != null) return loc;
+            } else if (selected instanceof SpawnBlock block) {
+                Location loc = attemptSpawnBlockSpawn(block);
+                if (loc != null) return loc;
             }
-
-            // Find safe Y coordinate
-            loc = findSafeY(loc);
-            if (loc == null) {
-                continue;
-            }
-
-            // Check biome
-            if (isBiomeBlocked(loc)) {
-                continue;
-            }
-
-            // Check GriefPrevention claims
-            if (gpHook.isEnabled() && gpHook.isInClaim(loc, player)) {
-                continue;
-            }
-
-            // Check if spawn location is safe
-            if (config.isRequireSolidGround() && !isSafeLocation(loc)) {
-                continue;
-            }
-
-            // Found a valid location!
-            // Center on block and add small offset for player placement
-            loc.setX(loc.getBlockX() + 0.5);
-            loc.setZ(loc.getBlockZ() + 0.5);
-            return loc;
         }
 
         // Failed to find valid location
         plugin.getLogger().warning("Failed to find valid spawn for " + player.getName() +
                 " after " + maxAttempts + " attempts. Using world spawn.");
         return null;
+    }
+
+    private Location attemptZoneSpawn(SpawnZone zone, Player player) {
+        if (zone.getWorld() == null) return null;
+
+        Location loc = zone.getRandomLocation();
+        if (loc == null) return null;
+
+        loc = findSafeY(loc);
+        if (loc == null) return null;
+
+        if (isBiomeBlocked(loc)) return null;
+        if (gpHook.isEnabled() && gpHook.isInClaim(loc, player)) return null;
+        if (config.isRequireSolidGround() && !isSafeLocation(loc)) return null;
+
+        loc.setX(loc.getBlockX() + 0.5);
+        loc.setZ(loc.getBlockZ() + 0.5);
+        return loc;
+    }
+
+    private Location attemptSpawnBlockSpawn(SpawnBlock block) {
+        Location loc = block.getSpawnLocation();
+        if (loc == null || loc.getWorld() == null) return null;
+
+        // Verify block still exists
+        Block worldBlock = loc.getWorld().getBlockAt(block.getX(), block.getY(), block.getZ());
+        if (worldBlock.getType() != Material.LODESTONE) {
+            plugin.getLogger().warning("Spawn block at " + block.getLocationKey() + " no longer exists");
+            spawnBlockManager.removeSpawnBlock(worldBlock.getLocation());
+            return null;
+        }
+
+        // Check safety at spawn location
+        if (!isSpawnBlockLocationSafe(loc)) return null;
+
+        return loc;
+    }
+
+    private Object selectWeightedSpawnPoint(List<SpawnZone> zones, Collection<SpawnBlock> spawnBlocks) {
+        double sbWeight = config.getSpawnBlockWeight();
+        List<WeightedEntry> entries = new ArrayList<>();
+
+        for (SpawnZone zone : zones) {
+            entries.add(new WeightedEntry(zone, zone.getWeight()));
+        }
+        for (SpawnBlock block : spawnBlocks) {
+            entries.add(new WeightedEntry(block, sbWeight));
+        }
+
+        if (entries.isEmpty()) return null;
+        if (entries.size() == 1) return entries.get(0).object;
+
+        double total = entries.stream().mapToDouble(e -> e.weight).sum();
+        double rand = ThreadLocalRandom.current().nextDouble() * total;
+        double cumulative = 0;
+
+        for (WeightedEntry entry : entries) {
+            cumulative += entry.weight;
+            if (rand < cumulative) return entry.object;
+        }
+        return entries.get(entries.size() - 1).object;
+    }
+
+    private boolean isSpawnBlockLocationSafe(Location loc) {
+        World world = loc.getWorld();
+        if (world == null) return false;
+
+        int x = loc.getBlockX(), y = loc.getBlockY(), z = loc.getBlockZ();
+        Block feet = world.getBlockAt(x, y, z);
+        Block head = world.getBlockAt(x, y + 1, z);
+
+        if (feet.getType().isSolid() || head.getType().isSolid()) return false;
+        if (isDangerous(feet.getType()) || isDangerous(head.getType())) return false;
+
+        // Check for lava nearby
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                if (world.getBlockAt(x + dx, y, z + dz).getType() == Material.LAVA) return false;
+            }
+        }
+        return true;
+    }
+
+    private static class WeightedEntry {
+        final Object object;
+        final double weight;
+        WeightedEntry(Object o, double w) { this.object = o; this.weight = w; }
     }
 
     /**

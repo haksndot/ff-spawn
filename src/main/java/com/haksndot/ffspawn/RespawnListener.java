@@ -1,4 +1,4 @@
-package com.haksndot.donutspawn;
+package com.haksndot.ffspawn;
 
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -10,9 +10,9 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 
 public class RespawnListener implements Listener {
 
-    private final DonutSpawn plugin;
+    private final FFSpawn plugin;
 
-    public RespawnListener(DonutSpawn plugin) {
+    public RespawnListener(FFSpawn plugin) {
         this.plugin = plugin;
     }
 
@@ -21,7 +21,7 @@ public class RespawnListener implements Listener {
         Player player = event.getPlayer();
 
         // Check bypass permission
-        if (player.hasPermission("donutspawn.bypass")) {
+        if (player.hasPermission("ffspawn.bypass")) {
             return;
         }
 
@@ -80,7 +80,7 @@ public class RespawnListener implements Listener {
         Player player = event.getPlayer();
 
         // Check bypass permission
-        if (player.hasPermission("donutspawn.bypass")) {
+        if (player.hasPermission("ffspawn.bypass")) {
             return;
         }
 

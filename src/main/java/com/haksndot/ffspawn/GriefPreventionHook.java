@@ -1,4 +1,4 @@
-package com.haksndot.donutspawn;
+package com.haksndot.ffspawn;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
@@ -12,11 +12,11 @@ import org.bukkit.plugin.Plugin;
  */
 public class GriefPreventionHook {
 
-    private final DonutSpawn plugin;
+    private final FFSpawn plugin;
     private boolean enabled;
     private GriefPrevention griefPrevention;
 
-    public GriefPreventionHook(DonutSpawn plugin) {
+    public GriefPreventionHook(FFSpawn plugin) {
         this.plugin = plugin;
         this.enabled = false;
 
