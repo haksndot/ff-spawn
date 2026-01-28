@@ -1,6 +1,6 @@
 # FF-Spawn
 
-**Flexible Foundation Spawn** - A Paper plugin for random spawn in donut-shaped zones with player-craftable spawn blocks and GriefPrevention awareness.
+**Finite Frontier Spawn** - A Paper plugin for random spawn in donut-shaped zones with player-craftable spawn blocks and GriefPrevention awareness.
 
 ## Features
 
